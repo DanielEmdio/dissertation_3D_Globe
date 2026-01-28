@@ -27,18 +27,53 @@ interface CountryFeature {
 interface Globe3DProps {
   onCountryClick?: (countryName: string) => void;
   hexagonData?: HexagonData[];
+  /**
+   * Visualization mode:
+   * - 'texture': Use pre-rendered texture image (faster, higher quality)
+   * - 'hexagons': Compute hexagons dynamically (original behavior)
+   */
+  visualizationMode?: 'texture' | 'hexagons';
 }
 
-// Zoom thresholds for resolution changes
-const ZOOM_THRESHOLD = 0.5; // Altitude below which we use high resolution
+// Configuration for visualization
+const GLOBE_CONFIG = {
+  // Pre-rendered seismic risk texture (export from QGIS)
+  // Place your exported image at: public/textures/seismic-risk-map.png
+  riskTextureUrl: '/textures/seismic-risk-map.png',
+  earthTextureUrl: '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+  backgroundUrl: '//unpkg.com/three-globe/example/img/night-sky.png',
+};
 
-export default function Globe3D({ onCountryClick, hexagonData = [] }: Globe3DProps) {
+export default function Globe3D({
+  onCountryClick,
+  hexagonData = [],
+  visualizationMode = 'texture'  // Default to texture mode
+}: Globe3DProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeEl = useRef<any>(null);
   const [countriesData, setCountriesData] = useState<CountryFeature[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [hexResolution, setHexResolution] = useState(2); // Default: lower resolution
-  const [globeReady, setGlobeReady] = useState(false);
+  const [hexResolution] = useState(4);
+  const [textureAvailable, setTextureAvailable] = useState<boolean | null>(null);
+
+  // Check if the pre-rendered texture exists
+  useEffect(() => {
+    if (visualizationMode === 'texture') {
+      const img = new Image();
+      img.onload = () => setTextureAvailable(true);
+      img.onerror = () => {
+        console.warn('Seismic risk texture not found at:', GLOBE_CONFIG.riskTextureUrl);
+        console.warn('Falling back to hexagon visualization.');
+        console.warn('To use texture mode, export your QGIS map to: public/textures/seismic-risk-map.png');
+        setTextureAvailable(false);
+      };
+      img.src = GLOBE_CONFIG.riskTextureUrl;
+    } else {
+      // Defer state update to avoid synchronous setState in effect
+      const timeoutId = setTimeout(() => setTextureAvailable(false), 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [visualizationMode]);
 
   // Load country boundaries for click detection
   useEffect(() => {
@@ -56,47 +91,16 @@ export default function Globe3D({ onCountryClick, hexagonData = [] }: Globe3DPro
       });
   }, []);
 
-  // Handle globe ready - setup auto-rotation and zoom listener
+  // Handle globe ready - setup auto-rotation
   const handleGlobeReady = useCallback(() => {
-    console.log('Globe is ready!');
-    setGlobeReady(true);
+    console.log('Globe ready! Mode:', textureAvailable ? 'texture' : 'hexagons');
 
     if (globeEl.current) {
       const controls = globeEl.current.controls();
       controls.autoRotate = true;
       controls.autoRotateSpeed = 0.5;
     }
-  }, []);
-
-  // Setup zoom listener after globe is ready
-  // useEffect(() => {
-  //   if (!globeReady || !globeEl.current) return;
-
-  //   const controls = globeEl.current.controls();
-
-  //   const handleZoomChange = () => {
-  //     if (!globeEl.current) return;
-
-  //     const pov = globeEl.current.pointOfView();
-  //     const altitude = pov.altitude;
-
-  //     console.log('Current altitude:', altitude);
-
-  //     // Update resolution based on zoom level
-  //     if (altitude < ZOOM_THRESHOLD) {
-  //       setHexResolution(3); // High resolution when zoomed in
-  //     } else {
-  //       setHexResolution(2); // Low resolution when zoomed out
-  //     }
-  //   };
-
-  //   controls.addEventListener('change', handleZoomChange);
-  //   console.log('Zoom listener added');
-
-  //   return () => {
-  //     controls.removeEventListener('change', handleZoomChange);
-  //   };
-  // }, [globeReady]);
+  }, [textureAvailable]);
 
   const handlePolygonClick = (polygon: object) => {
     const feature = polygon as CountryFeature;
@@ -107,7 +111,8 @@ export default function Globe3D({ onCountryClick, hexagonData = [] }: Globe3DPro
     }
   };
 
-  if (isLoading) {
+  // Wait for countries AND texture check to complete
+  if (isLoading || textureAvailable === null) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-900">
         <div className="text-white text-lg">Loading globe...</div>
@@ -115,15 +120,21 @@ export default function Globe3D({ onCountryClick, hexagonData = [] }: Globe3DPro
     );
   }
 
+  // Determine which mode to use
+  const useTexture = visualizationMode === 'texture' && textureAvailable;
+  const globeImageUrl = useTexture
+    ? GLOBE_CONFIG.riskTextureUrl
+    : GLOBE_CONFIG.earthTextureUrl;
+
   return (
     <div className="w-full h-full">
       <Globe
         ref={globeEl}
-        globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-        backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+        globeImageUrl={globeImageUrl}
+        backgroundImageUrl={GLOBE_CONFIG.backgroundUrl}
         onGlobeReady={handleGlobeReady}
 
-        // Country polygons for click detection (invisible)
+        // Country polygons for click detection (invisible but clickable)
         polygonsData={countriesData}
         polygonCapColor={() => 'rgba(0, 0, 0, 0)'}
         polygonSideColor={() => 'rgba(0, 0, 0, 0)'}
@@ -138,9 +149,8 @@ export default function Globe3D({ onCountryClick, hexagonData = [] }: Globe3DPro
         }}
         onPolygonClick={handlePolygonClick}
 
-        // Hexagon layer for seismic risk visualization
-        // Resolution changes dynamically based on zoom level
-        hexBinPointsData={hexagonData}
+        // Hexagon layer - ONLY used when texture is not available
+        hexBinPointsData={useTexture ? [] : hexagonData}
         hexBinPointLat={(obj: object) => (obj as HexagonData).lat}
         hexBinPointLng={(obj: object) => (obj as HexagonData).lng}
         hexBinPointWeight={(obj: object) => (obj as HexagonData).losses}
@@ -154,7 +164,7 @@ export default function Globe3D({ onCountryClick, hexagonData = [] }: Globe3DPro
         hexSideColor={(d: object) => {
           const hex = d as { sumWeight: number };
           const color = getHexColorForLosses(hex.sumWeight);
-          return color + '80'; // Add transparency
+          return color + '80';
         }}
       />
     </div>
