@@ -3,6 +3,9 @@
 import { useState, useRef, useCallback } from 'react';
 import Globe3D from './Globe3D';
 import CountryProfile from './CountryProfile';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BadgeEuro, User, Building2} from "lucide-react"
+
 
 interface HexagonData {
   lat: number;
@@ -16,8 +19,11 @@ interface DashboardProps {
   hexagonData?: HexagonData[];
 }
 
+type Metric = 'losses' | 'fatalities' | 'buildings';
+
 export default function Dashboard({ hexagonData = [] }: DashboardProps) {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [selectedMetric, setSelectedMetric] = useState<Metric>('losses');
   const [panelSize, setPanelSize] = useState({ width: 400, height: 500 });
   const isResizing = useRef(false);
   const startPos = useRef({ x: 0, y: 0 });
@@ -61,12 +67,13 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
   }, [panelSize]);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
+    <div className="relative w-screen h-screen overflow-hidden bg-black">
       {/* Globe - Full Screen */}
       <div className="absolute inset-0">
         <Globe3D
           onCountryClick={handleCountryClick}
           hexagonData={hexagonData}
+          metric={selectedMetric}
         />
       </div>
 
@@ -91,6 +98,25 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
           />
         </div>
       )}
+      <div className='absolute bottom-4 left-1/2 -translate-x-1/2 z-50'>
+        <Tabs defaultValue="losses" onValueChange={(v) => setSelectedMetric(v as Metric)}>
+          <TabsList className="bg-black/40 backdrop-blur-sm border border-white/10">
+
+            <TabsTrigger value="losses" className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white"> 
+              <BadgeEuro className="mr-2 h-4 w-4" /> Losses
+            </TabsTrigger>
+
+            <TabsTrigger value="fatalities" className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white"> 
+              <User className="mr-2 h-4 w-4" /> Fatalities
+            </TabsTrigger>
+
+            <TabsTrigger value="buildings" className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white"> 
+              <Building2 className="mr-2 h-4 w-4" /> Buildings
+            </TabsTrigger>
+            
+          </TabsList>
+        </Tabs>
+      </div>
     </div>
   );
 }

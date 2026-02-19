@@ -24,9 +24,12 @@ interface CountryFeature {
   geometry: unknown;
 }
 
+type Metric = 'losses' | 'fatalities' | 'buildings';
+
 interface Globe3DProps {
   onCountryClick?: (countryName: string) => void;
   hexagonData?: HexagonData[];
+  metric?: Metric;
   /**
    * Visualization mode:
    * - 'texture': Use pre-rendered texture image (faster, higher quality)
@@ -37,17 +40,18 @@ interface Globe3DProps {
 
 // Configuration for visualization
 const GLOBE_CONFIG = {
-  // Pre-rendered seismic risk texture (export from QGIS)
-  // Place your exported image at: public/textures/seismic-risk-map.png
-  riskTextureUrl: '/textures/seismic-risk-map.png',
   earthTextureUrl: '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
   backgroundUrl: '//unpkg.com/three-globe/example/img/night-sky.png',
 };
 
+const getRiskTextureUrl = (metric: Metric) =>
+  `/textures/seismic-risk-map-${metric}.png`;
+
 export default function Globe3D({
   onCountryClick,
   hexagonData = [],
-  visualizationMode = 'texture'  // Default to texture mode
+  metric = 'losses',
+  visualizationMode = 'texture',
 }: Globe3DProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeEl = useRef<any>(null);
@@ -56,24 +60,24 @@ export default function Globe3D({
   const [hexResolution] = useState(4);
   const [textureAvailable, setTextureAvailable] = useState<boolean | null>(null);
 
-  // Check if the pre-rendered texture exists
+  // Check if the pre-rendered texture exists (re-runs when metric changes)
   useEffect(() => {
     if (visualizationMode === 'texture') {
+      setTextureAvailable(null);
       const img = new Image();
+      const url = getRiskTextureUrl(metric);
       img.onload = () => setTextureAvailable(true);
       img.onerror = () => {
-        console.warn('Seismic risk texture not found at:', GLOBE_CONFIG.riskTextureUrl);
+        console.warn('Seismic risk texture not found at:', url);
         console.warn('Falling back to hexagon visualization.');
-        console.warn('To use texture mode, export your QGIS map to: public/textures/seismic-risk-map.png');
         setTextureAvailable(false);
       };
-      img.src = GLOBE_CONFIG.riskTextureUrl;
+      img.src = url;
     } else {
-      // Defer state update to avoid synchronous setState in effect
       const timeoutId = setTimeout(() => setTextureAvailable(false), 0);
       return () => clearTimeout(timeoutId);
     }
-  }, [visualizationMode]);
+  }, [visualizationMode, metric]);
 
   // Load country boundaries for click detection
   useEffect(() => {
@@ -123,7 +127,7 @@ export default function Globe3D({
   // Determine which mode to use
   const useTexture = visualizationMode === 'texture' && textureAvailable;
   const globeImageUrl = useTexture
-    ? GLOBE_CONFIG.riskTextureUrl
+    ? getRiskTextureUrl(metric)
     : GLOBE_CONFIG.earthTextureUrl;
 
   return (
