@@ -72,7 +72,6 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
       <div className="absolute inset-0">
         <Globe3D
           onCountryClick={handleCountryClick}
-          hexagonData={hexagonData}
           metric={selectedMetric}
         />
       </div>

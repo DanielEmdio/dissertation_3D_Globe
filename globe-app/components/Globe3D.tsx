@@ -2,18 +2,19 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { getHexColorForLosses } from '@/utils/colorMapping';
+import LoadingScreen from './LoadingScreen';
+// import { getHexColorForLosses } from '@/utils/colorMapping';
 
 // Dynamically import Globe to avoid SSR issues
 const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
 
-interface HexagonData {
-  lat: number;
-  lng: number;
-  losses: number;
-  fatalities?: number;
-  buildings?: number;
-}
+// interface HexagonData {
+//   lat: number;
+//   lng: number;
+//   losses: number;
+//   fatalities?: number;
+//   buildings?: number;
+// }
 
 interface CountryFeature {
   type: string;
@@ -28,14 +29,9 @@ type Metric = 'losses' | 'fatalities' | 'buildings';
 
 interface Globe3DProps {
   onCountryClick?: (countryName: string) => void;
-  hexagonData?: HexagonData[];
+  // hexagonData?: HexagonData[];
   metric?: Metric;
-  /**
-   * Visualization mode:
-   * - 'texture': Use pre-rendered texture image (faster, higher quality)
-   * - 'hexagons': Compute hexagons dynamically (original behavior)
-   */
-  visualizationMode?: 'texture' | 'hexagons';
+  // visualizationMode?: 'texture' | 'hexagons';
 }
 
 // Configuration for visualization
@@ -49,35 +45,30 @@ const getRiskTextureUrl = (metric: Metric) =>
 
 export default function Globe3D({
   onCountryClick,
-  hexagonData = [],
+  // hexagonData = [],
   metric = 'losses',
-  visualizationMode = 'texture',
+  // visualizationMode = 'texture',
 }: Globe3DProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeEl = useRef<any>(null);
   const [countriesData, setCountriesData] = useState<CountryFeature[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [hexResolution] = useState(4);
+  // const [hexResolution] = useState(4);
   const [textureAvailable, setTextureAvailable] = useState<boolean | null>(null);
 
   // Check if the pre-rendered texture exists (re-runs when metric changes)
   useEffect(() => {
-    if (visualizationMode === 'texture') {
-      setTextureAvailable(null);
-      const img = new Image();
-      const url = getRiskTextureUrl(metric);
-      img.onload = () => setTextureAvailable(true);
-      img.onerror = () => {
-        console.warn('Seismic risk texture not found at:', url);
-        console.warn('Falling back to hexagon visualization.');
-        setTextureAvailable(false);
-      };
-      img.src = url;
-    } else {
-      const timeoutId = setTimeout(() => setTextureAvailable(false), 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [visualizationMode, metric]);
+    setTextureAvailable(null);
+    const img = new Image();
+    const url = getRiskTextureUrl(metric);
+    img.onload = () => setTextureAvailable(true);
+    img.onerror = () => {
+      console.warn('Seismic risk texture not found at:', url);
+      console.warn('Falling back to hexagon visualization.');
+      setTextureAvailable(false);
+    };
+    img.src = url;
+  }, [metric]);
 
   // Load country boundaries for click detection
   useEffect(() => {
@@ -97,7 +88,7 @@ export default function Globe3D({
 
   // Handle globe ready - setup auto-rotation
   const handleGlobeReady = useCallback(() => {
-    console.log('Globe ready! Mode:', textureAvailable ? 'texture' : 'hexagons');
+    console.log('Globe ready! Texture:', textureAvailable ? 'available' : 'unavailable (fallback)');
 
     if (globeEl.current) {
       const controls = globeEl.current.controls();
@@ -117,16 +108,10 @@ export default function Globe3D({
 
   // Wait for countries AND texture check to complete
   if (isLoading || textureAvailable === null) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-900">
-        <div className="text-white text-lg">Loading globe...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
-  // Determine which mode to use
-  const useTexture = visualizationMode === 'texture' && textureAvailable;
-  const globeImageUrl = useTexture
+  const globeImageUrl = textureAvailable
     ? getRiskTextureUrl(metric)
     : GLOBE_CONFIG.earthTextureUrl;
 
@@ -154,22 +139,22 @@ export default function Globe3D({
         onPolygonClick={handlePolygonClick}
 
         // Hexagon layer - ONLY used when texture is not available
-        hexBinPointsData={useTexture ? [] : hexagonData}
-        hexBinPointLat={(obj: object) => (obj as HexagonData).lat}
-        hexBinPointLng={(obj: object) => (obj as HexagonData).lng}
-        hexBinPointWeight={(obj: object) => (obj as HexagonData).losses}
-        hexBinResolution={hexResolution}
-        hexMargin={0.2}
-        hexAltitude={0.001}
-        hexTopColor={(d: object) => {
-          const hex = d as { sumWeight: number };
-          return getHexColorForLosses(hex.sumWeight);
-        }}
-        hexSideColor={(d: object) => {
-          const hex = d as { sumWeight: number };
-          const color = getHexColorForLosses(hex.sumWeight);
-          return color + '80';
-        }}
+        // hexBinPointsData={useTexture ? [] : hexagonData}
+        // hexBinPointLat={(obj: object) => (obj as HexagonData).lat}
+        // hexBinPointLng={(obj: object) => (obj as HexagonData).lng}
+        // hexBinPointWeight={(obj: object) => (obj as HexagonData).losses}
+        // hexBinResolution={hexResolution}
+        // hexMargin={0.2}
+        // hexAltitude={0.001}
+        // hexTopColor={(d: object) => {
+        //   const hex = d as { sumWeight: number };
+        //   return getHexColorForLosses(hex.sumWeight);
+        // }}
+        // hexSideColor={(d: object) => {
+        //   const hex = d as { sumWeight: number };
+        //   const color = getHexColorForLosses(hex.sumWeight);
+        //   return color + '80';
+        // }}
       />
     </div>
   );

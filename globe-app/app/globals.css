@@ -124,3 +124,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes loading-slide {
+  0%   { transform: translateX(-150%); }
+  50%  { transform: translateX(250%); }
+  100% { transform: translateX(-150%); }
+}
