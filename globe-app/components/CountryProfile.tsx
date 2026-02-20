@@ -75,7 +75,7 @@ export default function CountryProfile({ countryName, onClose }: CountryProfileP
       {/* Profile Image */}
       <div
         className="flex-1 overflow-auto"
-        style={{ padding: '1rem', minHeight: 0 }}
+        style={{ padding: '0.1rem', minHeight: 0 }}
       >
         {imageError ? (
           <div className="flex items-center justify-center h-full">

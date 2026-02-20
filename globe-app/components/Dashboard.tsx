@@ -5,7 +5,7 @@ import Globe3D from './Globe3D';
 import CountryProfile from './CountryProfile';
 import MetricTabs from './MetricTabs';
 import { DraggableCardBody, DraggableCardContainer } from './ui/draggable-card';
-
+import { Magnet } from "lucide-react"
 
 interface HexagonData {
   lat: number;
@@ -25,6 +25,7 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<Metric>('losses');
   const [panelSize, setPanelSize] = useState({ width: 400, height: 500 });
+  const cardRef = useRef<{ resetPosition: () => void }>(null);
   const isResizing = useRef(false);
   const startPos = useRef({ x: 0, y: 0 });
   const startSize = useRef({ width: 0, height: 0 });
@@ -96,14 +97,23 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
         //     }}
         //   />
         // </div>
-        <DraggableCardContainer className="absolute top-4 right-4 z-50">
-          <DraggableCardBody className="w-96 h-[520px] p-0 min-h-0 bg-white dark:bg-neutral-900">
-            <CountryProfile
-              countryName={selectedCountry}
-              onClose={handleCloseProfile}
-            />
-          </DraggableCardBody>
-        </DraggableCardContainer>
+        <>
+          <DraggableCardContainer className="absolute bottom-4 right-4 z-50">
+            <DraggableCardBody ref={cardRef} className="w-[700px] h-[600px] p-0 min-h-0 bg-white dark:bg-neutral-900">
+              <CountryProfile
+                countryName={selectedCountry}
+                onClose={handleCloseProfile}
+              />
+            </DraggableCardBody>
+          </DraggableCardContainer>
+          <button
+            onClick={() => cardRef.current?.resetPosition()}
+            className="absolute bottom-6 right-6 z-50 p-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-colors animate-pulse"
+            title="Snap card back to original position"
+          >
+            <Magnet className="w-5 h-5" />
+          </button>
+        </>
       )}
 
       <div className='absolute top-4 left-4 z-50'>

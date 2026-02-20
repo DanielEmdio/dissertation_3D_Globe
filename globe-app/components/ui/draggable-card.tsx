@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import {
   motion,
   useMotionValue,
@@ -11,17 +11,28 @@ import {
   useAnimationControls,
 } from "motion/react";
 
-export const DraggableCardBody = ({
-  className,
-  children,
-}: {
-  className?: string;
-  children?: React.ReactNode;
-}) => {
+export const DraggableCardBody = forwardRef<
+  { resetPosition: () => void },
+  { className?: string; children?: React.ReactNode }
+>(({ className, children }, ref) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const controls = useAnimationControls();
+
+  useImperativeHandle(ref, () => ({
+    resetPosition: () => {
+      animate(x, 0, { type: "spring", stiffness: 200, damping: 25 });
+      animate(y, 0, { type: "spring", stiffness: 200, damping: 25 });
+      controls.start({
+        rotateX: 0,
+        rotateY: 0,
+        transition: { type: "spring", stiffness: 200, damping: 25 },
+      });
+    },
+  }));
   const [constraints, setConstraints] = useState({
     top: 0,
     left: 0,
@@ -35,16 +46,16 @@ export const DraggableCardBody = ({
 
   const springConfig = {
     stiffness: 100,
-    damping: 20,
+    damping: 50,
     mass: 0.5,
   };
 
   const rotateX = useSpring(
-    useTransform(mouseY, [-300, 300], [25, -25]),
+    useTransform(mouseY, [-300, 300], [10, -10]),
     springConfig,
   );
   const rotateY = useSpring(
-    useTransform(mouseX, [-300, 300], [-25, 25]),
+    useTransform(mouseX, [-300, 300], [-10, 10]),
     springConfig,
   );
 
@@ -153,6 +164,8 @@ export const DraggableCardBody = ({
         });
       }}
       style={{
+        x,
+        y,
         rotateX,
         rotateY,
         opacity,
@@ -176,7 +189,7 @@ export const DraggableCardBody = ({
       />
     </motion.div>
   );
-};
+});
 
 export const DraggableCardContainer = ({
   className,
