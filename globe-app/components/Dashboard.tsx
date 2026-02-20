@@ -3,8 +3,8 @@
 import { useState, useRef, useCallback } from 'react';
 import Globe3D from './Globe3D';
 import CountryProfile from './CountryProfile';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BadgeEuro, User, Building2} from "lucide-react"
+import MetricTabs from './MetricTabs';
+import { DraggableCardBody, DraggableCardContainer } from './ui/draggable-card';
 
 
 interface HexagonData {
@@ -78,43 +78,36 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
 
       {/* Country Profile - Overlay in upper right */}
       {selectedCountry && (
-        <div
-          className="absolute top-4 right-4 bg-white rounded-lg shadow-xl overflow-hidden"
-          style={{ width: `${panelSize.width}px`, height: `${panelSize.height}px`, zIndex: 1000 }}
-        >
-          <CountryProfile
-            countryName={selectedCountry}
-            onClose={handleCloseProfile}
-          />
-          {/* Resize handle - lower left corner */}
-          <div
-            onMouseDown={handleResizeStart}
-            className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize"
-            style={{
-              background: 'linear-gradient(135deg, transparent 50%, #9ca3af 50%)',
-              borderBottomLeftRadius: '0.5rem',
-            }}
-          />
-        </div>
+        // <div
+        //   className="absolute top-4 right-4 bg-white rounded-lg shadow-xl overflow-hidden"
+        //   style={{ width: `${panelSize.width}px`, height: `${panelSize.height}px`, zIndex: 1000 }}
+        // >
+        //   <CountryProfile
+        //     countryName={selectedCountry}
+        //     onClose={handleCloseProfile}
+        //   />
+        //   {/* Resize handle - lower left corner */}
+        //   <div
+        //     onMouseDown={handleResizeStart}
+        //     className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize"
+        //     style={{
+        //       background: 'linear-gradient(135deg, transparent 50%, #9ca3af 50%)',
+        //       borderBottomLeftRadius: '0.5rem',
+        //     }}
+        //   />
+        // </div>
+        <DraggableCardContainer className="absolute top-4 right-4 z-50">
+          <DraggableCardBody className="w-96 h-[520px] p-0 min-h-0 bg-white dark:bg-neutral-900">
+            <CountryProfile
+              countryName={selectedCountry}
+              onClose={handleCloseProfile}
+            />
+          </DraggableCardBody>
+        </DraggableCardContainer>
       )}
-      <div className='absolute bottom-4 left-1/2 -translate-x-1/2 z-50'>
-        <Tabs defaultValue="losses" onValueChange={(v) => setSelectedMetric(v as Metric)}>
-          <TabsList className="bg-black/40 backdrop-blur-sm border border-white/10">
 
-            <TabsTrigger value="losses" className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white"> 
-              <BadgeEuro className="mr-2 h-4 w-4" /> Losses
-            </TabsTrigger>
-
-            <TabsTrigger value="fatalities" className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white"> 
-              <User className="mr-2 h-4 w-4" /> Fatalities
-            </TabsTrigger>
-
-            <TabsTrigger value="buildings" className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white"> 
-              <Building2 className="mr-2 h-4 w-4" /> Buildings
-            </TabsTrigger>
-            
-          </TabsList>
-        </Tabs>
+      <div className='absolute top-4 left-4 z-50'>
+        <MetricTabs onMetricChange={setSelectedMetric} />
       </div>
     </div>
   );
