@@ -1,4 +1,5 @@
 import { Radar, RadarChart, PolarGrid, Legend, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import {EyeClosed, Eye, Radar as RadarIcon} from "lucide-react";
 
 // #region Sample data
 const data = [
@@ -56,11 +57,22 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
   return (
     <>  
     <div>
-        <h3 className="text-white text-m text-center">
+      <h3 className="relative text-white text-m text-center">
+        <span className="inline-flex items-center">
+          <RadarIcon className="mr-2 mb-1" />
           {country1 && country2
-            ? `${country1} vs ${country2}`
-            : country1 ?? country2 ?? 'Select countries to compare'}
-        </h3>
+          ? `${country1} vs ${country2}`
+          : country1 ?? country2 ?? 'Select countries to compare'}
+        </span>
+
+        <button
+          type="button"
+          className="group absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-md border border-gray-400 bg-black/40 hover:bg-black/70"
+        >
+          <Eye className="text-gray-300 group-hover:hidden" />
+          <EyeClosed className="hidden text-gray-300 group-hover:inline-block" />
+        </button>
+      </h3>
     </div>
 
     <RadarChart className='mx-auto' cx="50%" cy="50%" outerRadius="80%" width={500} height={300} data={data}>
