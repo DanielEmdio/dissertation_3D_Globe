@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getCountryProfilePath } from '@/utils/countryMapping';
+import { OctagonAlert } from "lucide-react"
+import { LoaderOne } from "@/components/ui/loader";
+
 
 interface CountryProfileProps {
   countryName: string | null;
@@ -11,6 +14,12 @@ interface CountryProfileProps {
 export default function CountryProfile({ countryName, onClose }: CountryProfileProps) {
   // Track which country had an error (not just boolean)
   const [errorCountry, setErrorCountry] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Reset loading state whenever the selected country changes
+  useEffect(() => {
+    setIsLoading(true);
+  }, [countryName]);
 
   // Only show error if it's for the current country
   const imageError = errorCountry === countryName;
@@ -19,19 +28,7 @@ export default function CountryProfile({ countryName, onClose }: CountryProfileP
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50 border-l border-gray-200">
         <div className="text-center text-gray-500 p-8">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+            <OctagonAlert className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium mb-2">No Country Selected</h3>
           <p className="text-sm">Click on a country on the globe to view its seismic risk profile</p>
         </div>
@@ -80,21 +77,9 @@ export default function CountryProfile({ countryName, onClose }: CountryProfileP
         {imageError ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-gray-500">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
+              <OctagonAlert className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-sm">
-                Profile not found for <b>{countryName}</b>
+                No profile found for <b>{countryName}</b>
               </p>
               {/* <p className="text-xs mt-2 text-gray-400">
                 Expected path: {profilePath}
@@ -102,13 +87,21 @@ export default function CountryProfile({ countryName, onClose }: CountryProfileP
             </div>
           </div>
         ) : (
-          <div style={{ width: '100%', height: '100%' }}>
+          <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <LoaderOne />
+                </div>
+              </div>
+            )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={profilePath}
               alt={`${countryName} Seismic Risk Profile`}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              onError={() => setErrorCountry(countryName)}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoading ? 'none' : 'block' }}
+              onLoad={() => setIsLoading(false)}
+              onError={() => { setErrorCountry(countryName); setIsLoading(false); }}
             />
           </div>
         )}

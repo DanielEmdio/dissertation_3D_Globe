@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import Globe3D from './Globe3D';
 import CountryProfile from './CountryProfile';
 import MetricTabs from './MetricTabs';
+import RadarChart from './RadarChart';
 import { DraggableCardBody, DraggableCardContainer } from './ui/draggable-card';
 import { Magnet } from "lucide-react"
 
@@ -24,6 +25,7 @@ type Metric = 'losses' | 'fatalities' | 'buildings';
 export default function Dashboard({ hexagonData = [] }: DashboardProps) {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<Metric>('losses');
+  const [compareCountries, setCompareCountries] = useState<[string | null, string | null]>([null, null]);
   const [panelSize, setPanelSize] = useState({ width: 400, height: 500 });
   const cardRef = useRef<{ resetPosition: () => void }>(null);
   const isResizing = useRef(false);
@@ -32,6 +34,10 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
 
   const handleCountryClick = (countryName: string) => {
     setSelectedCountry(countryName);
+    setCompareCountries(prev => {
+      if (prev[0] === countryName || prev[1] === countryName) return prev;
+      return [prev[1], countryName];
+    });
   };
 
   const handleCloseProfile = () => {
@@ -79,24 +85,6 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
 
       {/* Country Profile - Overlay in upper right */}
       {selectedCountry && (
-        // <div
-        //   className="absolute top-4 right-4 bg-white rounded-lg shadow-xl overflow-hidden"
-        //   style={{ width: `${panelSize.width}px`, height: `${panelSize.height}px`, zIndex: 1000 }}
-        // >
-        //   <CountryProfile
-        //     countryName={selectedCountry}
-        //     onClose={handleCloseProfile}
-        //   />
-        //   {/* Resize handle - lower left corner */}
-        //   <div
-        //     onMouseDown={handleResizeStart}
-        //     className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize"
-        //     style={{
-        //       background: 'linear-gradient(135deg, transparent 50%, #9ca3af 50%)',
-        //       borderBottomLeftRadius: '0.5rem',
-        //     }}
-        //   />
-        // </div>
         <>
           <DraggableCardContainer className="absolute bottom-4 right-4 z-50">
             <DraggableCardBody ref={cardRef} className="w-[700px] h-[600px] p-0 min-h-0 bg-white dark:bg-neutral-900">
@@ -118,6 +106,10 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
 
       <div className='absolute top-4 left-4 z-50'>
         <MetricTabs onMetricChange={setSelectedMetric} />
+      </div>
+
+      <div className='absolute bottom-4 left-4 z-50 bg-black/40 backdrop-blur-sm border border-white/10 p-4 rounded-lg'>
+        <RadarChart country1={compareCountries[0]} country2={compareCountries[1]} />
       </div>
     </div>
   );
