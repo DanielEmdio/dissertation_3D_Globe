@@ -20,10 +20,12 @@ export const DraggableCardBody = forwardRef<
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const cardRef = useRef<HTMLDivElement>(null);
+  const isMounted = useRef(false);
   const controls = useAnimationControls();
 
   useImperativeHandle(ref, () => ({
     resetPosition: () => {
+      if (!isMounted.current) return;
       animate(x, 0, { type: "spring", stiffness: 200, damping: 25 });
       animate(y, 0, { type: "spring", stiffness: 200, damping: 25 });
       controls.start({
@@ -70,6 +72,8 @@ export const DraggableCardBody = forwardRef<
   );
 
   useEffect(() => {
+    isMounted.current = true;
+
     // Update constraints when component mounts or window resizes
     const updateConstraints = () => {
       if (typeof window !== "undefined") {
@@ -89,6 +93,7 @@ export const DraggableCardBody = forwardRef<
 
     // Clean up
     return () => {
+      isMounted.current = false;
       window.removeEventListener("resize", updateConstraints);
     };
   }, []);
@@ -123,17 +128,19 @@ export const DraggableCardBody = forwardRef<
       onDragStart={() => {
         document.body.style.cursor = "grabbing";
       }}
-      onDragEnd={(event, info) => {
+      onDragEnd={(_event, info) => {
         document.body.style.cursor = "default";
 
-        controls.start({
-          rotateX: 0,
-          rotateY: 0,
-          transition: {
-            type: "spring",
-            ...springConfig,
-          },
-        });
+        if (isMounted.current) {
+          controls.start({
+            rotateX: 0,
+            rotateY: 0,
+            transition: {
+              type: "spring",
+              ...springConfig,
+            },
+          });
+        }
         const currentVelocityX = velocityX.get();
         const currentVelocityY = velocityY.get();
 

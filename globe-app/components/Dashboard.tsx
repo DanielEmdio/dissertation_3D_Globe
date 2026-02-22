@@ -108,9 +108,11 @@ export default function Dashboard({ hexagonData = [] }: DashboardProps) {
         <MetricTabs onMetricChange={setSelectedMetric} />
       </div>
 
-      <div className='absolute bottom-4 left-4 z-50 bg-black/40 backdrop-blur-sm border border-white/10 p-4 rounded-lg'>
-        <RadarChart country1={compareCountries[0]} country2={compareCountries[1]} />
-      </div>
+      {(compareCountries[0] || compareCountries[1]) && (
+        <div className='absolute bottom-4 left-4 z-50 bg-black/40 backdrop-blur-sm border border-white/10 p-4 rounded-lg'>
+          <RadarChart country1={compareCountries[0]} country2={compareCountries[1]} />
+        </div>
+      )}
     </div>
   );
 }
