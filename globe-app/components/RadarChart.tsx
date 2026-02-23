@@ -1,7 +1,45 @@
 import { Radar, RadarChart, PolarGrid, Legend, PolarAngleAxis, PolarRadiusAxis, Tooltip } from 'recharts';
 import { EyeClosed, Eye, Radar as RadarIcon } from "lucide-react";
 import { useState, useEffect } from 'react';
-import { getNormalizedData, METRICS } from '@/lib/riskData';
+import { getNormalizedData, getRawData, METRICS } from '@/lib/riskData';
+
+type ChartRow = {
+  subject:  string;
+  A:        number;
+  B:        number;
+  A_raw:    number | null;
+  B_raw:    number | null;
+  fullMark: number;
+};
+
+function formatRaw(value: number | null): string {
+  if (value === null) return 'N/A';
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)}B`;
+  if (value >= 1_000_000)     return `${(value / 1_000_000).toFixed(2)}M`;
+  if (value >= 1_000)         return `${(value / 1_000).toFixed(2)}K`;
+  return value.toFixed(2);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-md border border-slate-600 bg-slate-900 p-3 text-sm shadow-lg">
+      <p className="mb-2 font-medium text-gray-200">{label}</p>
+      {payload.map((entry: any, i: number) => {
+        const rawKey = entry.dataKey === 'A' ? 'A_raw' : 'B_raw';
+        const raw    = entry.payload[rawKey] as number | null;
+        return (
+          <div key={i} className="flex items-center gap-2">
+            <span className="font-medium" style={{ color: entry.color }}>{entry.name}:</span>
+            <span className="text-gray-100">{formatRaw(raw)}</span>
+            <span className="text-gray-500">({entry.value}/100)</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 interface RadarChartProps {
   country1?: string | null;
@@ -10,23 +48,27 @@ interface RadarChartProps {
 
 export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarChartProps) {
   const [isMinimized, setIsMinimized] = useState(false);
-  const [chartData, setChartData] = useState<{ subject: string; A: number; B: number; fullMark: number }[]>([]);
+  const [chartData, setChartData] = useState<ChartRow[]>([]);
   const [c1Missing, setC1Missing] = useState(false);
   const [c2Missing, setC2Missing] = useState(false);
 
   useEffect(() => {
-    getNormalizedData().then(data => {
-      const c1 = country1 ? data.get(country1) : null;
-      const c2 = country2 ? data.get(country2) : null;
+    Promise.all([getNormalizedData(), getRawData()]).then(([norm, raw]) => {
+      const c1norm = country1 ? norm.get(country1) : null;
+      const c2norm = country2 ? norm.get(country2) : null;
+      const c1raw  = country1 ? raw.get(country1)  : null;
+      const c2raw  = country2 ? raw.get(country2)  : null;
 
-      setC1Missing(!!country1 && !c1);
-      setC2Missing(!!country2 && !c2);
+      setC1Missing(!!country1 && !c1norm);
+      setC2Missing(!!country2 && !c2norm);
 
       setChartData(
         METRICS.map(m => ({
           subject:  m.label,
-          A:        c1?.[m.key] ?? 0,
-          B:        c2?.[m.key] ?? 0,
+          A:        c1norm?.[m.key] ?? 0,
+          B:        c2norm?.[m.key] ?? 0,
+          A_raw:    c1raw?.[m.key]  ?? null,
+          B_raw:    c2raw?.[m.key]  ?? null,
           fullMark: 100,
         }))
       );
@@ -78,12 +120,7 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
       <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} />
       {country1 && !c1Missing && <Radar name={country1} dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />}
       {country2 && !c2Missing && <Radar name={country2} dataKey="B" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />}
-      <Tooltip
-        cursor={{ stroke: '#4b5563', strokeWidth: 1 }}
-        contentStyle={{ backgroundColor: '#020617', borderColor: '#4b5563' }}
-        labelStyle={{ color: '#e5e7eb' }}
-        itemStyle={{ color: '#e5e7eb' }}
-      />
+      <Tooltip content={<CustomTooltip />} />
       <Legend wrapperStyle={{ color: '#d1d5db' }} />
     
     </RadarChart>

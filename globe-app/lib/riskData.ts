@@ -15,6 +15,10 @@ export type NormalizedCountryData = Record<MetricKey, number>; // 0–100
 let rawCache:        Map<string, RawCountryData>        | null = null;
 let normalizedCache: Map<string, NormalizedCountryData> | null = null;
 
+export async function getRawData(): Promise<Map<string, RawCountryData>> {
+  return loadRaw();
+}
+
 async function loadRaw(): Promise<Map<string, RawCountryData>> {
   if (rawCache) return rawCache;
 
