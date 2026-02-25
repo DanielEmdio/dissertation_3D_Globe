@@ -58,10 +58,10 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
             <Card className="w-[300px] bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><BadgeEuro className="mr-2 mb-2" />Losses:</CardTitle>
-                <CardDescription className='text-white/70'>View your key metrics and recent project activity. Track progress across all your active projects.</CardDescription>
+                <CardDescription className='text-white/70'>Estimated annual average economic losses from earthquakes.</CardDescription>
               </CardHeader>
               <CardContent className="text-sm text-white/50">
-                You have 12 active projects and 3 pending tasks.
+                This metric reflects the modelled Annual Average Loss in monetary terms, capturing the long-term expected replacement and repair costs due to seismic events.
               </CardContent>
             </Card>
           )}
@@ -69,10 +69,10 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
             <Card className="w-[300px] bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><User className="mr-2 mb-2" />Fatalities:</CardTitle>
-                <CardDescription className='text-white/70'>View your key metrics and recent project activity. Track progress across all your active projects.</CardDescription>
+                <CardDescription className='text-white/70'>Estimated number of fatalities due to earthquakes.</CardDescription>
               </CardHeader>
               <CardContent className="text-sm text-white/50">
-                You have 12 active projects and 3 pending tasks.
+                Values represent the seismic risk to life.
               </CardContent>
             </Card>
           )}
@@ -80,10 +80,10 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
             <Card className="w-[300px] bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><Building2 className="mr-2 mb-2" />Buildings:</CardTitle>
-                <CardDescription className='text-white/70'>View your key metrics and recent project activity. Track progress across all your active projects.</CardDescription>
+                <CardDescription className='text-white/70'>Estimated number of buildings.</CardDescription>
               </CardHeader>
               <CardContent className="text-sm text-white/50">
-                You have 12 active projects and 3 pending tasks.
+                This indicator approximates the number of buildings in a given area, highlighting structural exposure to seismic shaking and potential damage.
               </CardContent>
             </Card>
           )}
