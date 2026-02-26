@@ -3,18 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import LoadingScreen from './LoadingScreen';
-// import { getHexColorForLosses } from '@/utils/colorMapping';
+
 
 // Dynamically import Globe to avoid SSR issues
 const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
-
-// interface HexagonData {
-//   lat: number;
-//   lng: number;
-//   losses: number;
-//   fatalities?: number;
-//   buildings?: number;
-// }
 
 interface CountryFeature {
   type: string;
@@ -29,9 +21,7 @@ type Metric = 'losses' | 'fatalities' | 'buildings';
 
 interface Globe3DProps {
   onCountryClick?: (countryName: string) => void;
-  // hexagonData?: HexagonData[];
   metric?: Metric;
-  // visualizationMode?: 'texture' | 'hexagons';
 }
 
 // Configuration for visualization
@@ -45,16 +35,24 @@ const getRiskTextureUrl = (metric: Metric) =>
 
 export default function Globe3D({
   onCountryClick,
-  // hexagonData = [],
   metric = 'losses',
-  // visualizationMode = 'texture',
 }: Globe3DProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const globeEl = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const clickSoundRef = useRef<HTMLAudioElement | null>(null);
   const [countriesData, setCountriesData] = useState<CountryFeature[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // const [hexResolution] = useState(4);
   const [textureAvailable, setTextureAvailable] = useState<boolean | null>(null);
+
+  // Pre-load click sound
+  useEffect(() => {
+    const sfx = new Audio('/sounds/universfield-interface-124464.mp3');
+    sfx.playbackRate = 2;
+    sfx.volume = 0.8;
+    clickSoundRef.current = sfx;
+    return () => { sfx.src = ''; };
+  }, []);
 
   // Check if the pre-rendered texture exists (re-runs when metric changes)
   useEffect(() => {
@@ -105,9 +103,37 @@ export default function Globe3D({
     if (feature && feature.properties && feature.properties.NAME) {
       const countryName = feature.properties.NAME;
       console.log('Country clicked:', countryName);
+      if (clickSoundRef.current) {
+        clickSoundRef.current.currentTime = 0;
+        clickSoundRef.current.play().catch(() => {});
+      }
       onCountryClick?.(countryName);
     }
   };
+
+  // Start background music once the globe is ready
+  useEffect(() => {
+    if (isLoading || textureAvailable === null) return;
+
+    const audio = new Audio('/sounds/647591__collectionofmemories__lo-fi-loop.wav');
+    audio.loop = true;
+    audio.volume = 0.4;
+    audioRef.current = audio;
+
+    audio.play().catch(() => {
+      // Autoplay blocked — play on first user interaction
+      const resume = () => {
+        audio.play();
+        window.removeEventListener('pointerdown', resume);
+      };
+      window.addEventListener('pointerdown', resume);
+    });
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, [isLoading, textureAvailable]);
 
   // Wait for countries AND texture check to complete
   if (isLoading || textureAvailable === null) {
@@ -141,23 +167,6 @@ export default function Globe3D({
         }}
         onPolygonClick={handlePolygonClick}
 
-        // Hexagon layer - ONLY used when texture is not available
-        // hexBinPointsData={useTexture ? [] : hexagonData}
-        // hexBinPointLat={(obj: object) => (obj as HexagonData).lat}
-        // hexBinPointLng={(obj: object) => (obj as HexagonData).lng}
-        // hexBinPointWeight={(obj: object) => (obj as HexagonData).losses}
-        // hexBinResolution={hexResolution}
-        // hexMargin={0.2}
-        // hexAltitude={0.001}
-        // hexTopColor={(d: object) => {
-        //   const hex = d as { sumWeight: number };
-        //   return getHexColorForLosses(hex.sumWeight);
-        // }}
-        // hexSideColor={(d: object) => {
-        //   const hex = d as { sumWeight: number };
-        //   const color = getHexColorForLosses(hex.sumWeight);
-        //   return color + '80';
-        // }}
       />
     </div>
   );
