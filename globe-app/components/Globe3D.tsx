@@ -72,8 +72,11 @@ export default function Globe3D({
 
   // Load country boundaries for click detection
   useEffect(() => {
-    fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
-      .then(res => res.json())
+    fetch('/data/countries_bounderies.geojson')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.url}`);
+        return res.json();
+      })
       .then(data => {
         if (data && data.features) {
           setCountriesData(data.features);

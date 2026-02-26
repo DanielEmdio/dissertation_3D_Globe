@@ -8,21 +8,9 @@ import RadarChart from './RadarChart';
 import { DraggableCardBody, DraggableCardContainer } from './ui/draggable-card';
 import { Magnet } from "lucide-react"
 
-interface HexagonData {
-  lat: number;
-  lng: number;
-  losses: number;
-  fatalities?: number;
-  buildings?: number;
-}
-
-interface DashboardProps {
-  hexagonData?: HexagonData[];
-}
-
 type Metric = 'losses' | 'fatalities' | 'buildings';
 
-export default function Dashboard({ hexagonData = [] }: DashboardProps) {
+export default function Dashboard() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<Metric>('losses');
   const [compareCountries, setCompareCountries] = useState<[string | null, string | null]>([null, null]);
