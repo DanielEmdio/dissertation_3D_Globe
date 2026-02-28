@@ -1,7 +1,9 @@
 import { Radar, RadarChart, PolarGrid, Legend, PolarAngleAxis, PolarRadiusAxis, Tooltip } from 'recharts';
 import { EyeClosed, Eye, Radar as RadarIcon } from "lucide-react";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getRawData, METRICS } from '@/lib/riskData';
+
+const RADAR_COLORS = ["#82ca9d", "#8884d8", "#ff6b6b", "#ffd93d", "#6bcfff", "#ff9f43"];
 
 type ChartRow = {
   subject:  string;
@@ -52,6 +54,21 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
   const [chartData, setChartData] = useState<ChartRow[]>([]);
   const [c1Missing, setC1Missing] = useState(false);
   const [c2Missing, setC2Missing] = useState(false);
+  const [colorCycle, setColorCycle] = useState(0);
+  const prevC1Ref = useRef<string | null | undefined>(country1 ?? null);
+  const prevC2Ref = useRef<string | null | undefined>(country2 ?? null);
+
+  // Advance the color cycle only when an already-set country is replaced
+  useEffect(() => {
+    const wasC1Set = prevC1Ref.current != null;
+    const wasC2Set = prevC2Ref.current != null;
+    const c1Cycled = wasC1Set && country1 !== prevC1Ref.current && country1 != null;
+    const c2Cycled = wasC2Set && country2 !== prevC2Ref.current && country2 != null;
+    prevC1Ref.current = country1;
+    prevC2Ref.current = country2;
+    if (c1Cycled || c2Cycled) setColorCycle(n => n + 1);
+    // console.log('Country change detected:', { country1, country2, c1Cycled, c2Cycled, colorCycle });
+  }, [country1, country2]);
 
   useEffect(() => {
     getRawData().then(raw => {
@@ -95,6 +112,9 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
   const label1 = country1 ? (c1Missing ? `${country1} (no data)` : country1) : null;
   const label2 = country2 ? (c2Missing ? `${country2} (no data)` : country2) : null;
 
+  const colorB = RADAR_COLORS[colorCycle % RADAR_COLORS.length];
+  const colorA = RADAR_COLORS[(colorCycle - 1 + RADAR_COLORS.length) % RADAR_COLORS.length];
+
   return (
     <>
     <div>
@@ -122,8 +142,8 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
       <PolarGrid />
       <PolarAngleAxis dataKey="subject" tick={{ fill: '#d1d5db', fontSize: 12 }} />
       {/* <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} /> */}
-      {country1 && !c1Missing && <Radar name={country1} dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />}
-      {country2 && !c2Missing && <Radar name={country2} dataKey="B" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />}
+      {country1 && !c1Missing && <Radar name={country1} dataKey="A" stroke={colorA} fill={colorA} fillOpacity={0.6} />}
+      {country2 && !c2Missing && <Radar name={country2} dataKey="B" stroke={colorB} fill={colorB} fillOpacity={0.6} />}
       <Tooltip content={<CustomTooltip />} />
       <Legend wrapperStyle={{ color: '#d1d5db' }} />
     

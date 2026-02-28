@@ -10,10 +10,10 @@ export const METRICS = [
 
 export type MetricKey = typeof METRICS[number]['key'];
 export type RawCountryData    = Record<MetricKey, number | null>;
-export type NormalizedCountryData = Record<MetricKey, number>; // 0–100
+// export type NormalizedCountryData = Record<MetricKey, number>; // 0–100
 
 let rawCache:        Map<string, RawCountryData>        | null = null;
-let normalizedCache: Map<string, NormalizedCountryData> | null = null;
+// let normalizedCache: Map<string, NormalizedCountryData> | null = null;
 
 export async function getRawData(): Promise<Map<string, RawCountryData>> {
   return loadRaw();
@@ -47,37 +47,37 @@ async function loadRaw(): Promise<Map<string, RawCountryData>> {
   return map;
 }
 
-function logNormalize(allValues: (number | null)[], value: number | null): number {
-  if (value === null || value <= 0) return 0;
+// function logNormalize(allValues: (number | null)[], value: number | null): number {
+//   if (value === null || value <= 0) return 0;
 
-  const valid = allValues.filter((v): v is number => v !== null && v > 0);
-  if (valid.length === 0) return 0;
+//   const valid = allValues.filter((v): v is number => v !== null && v > 0);
+//   if (valid.length === 0) return 0;
 
-  const logs  = valid.map(v => Math.log10(v));
-  const min   = Math.min(...logs);
-  const max   = Math.max(...logs);
-  const logV  = Math.log10(value);
+//   const logs  = valid.map(v => Math.log10(v));
+//   const min   = Math.min(...logs);
+//   const max   = Math.max(...logs);
+//   const logV  = Math.log10(value);
 
-  if (max === min) return 50;
-  return Math.round(((logV - min) / (max - min)) * 100);
-}
+//   if (max === min) return 50;
+//   return Math.round(((logV - min) / (max - min)) * 100);
+// }
 
-export async function getNormalizedData(): Promise<Map<string, NormalizedCountryData>> {
-  if (normalizedCache) return normalizedCache;
+// export async function getNormalizedData(): Promise<Map<string, NormalizedCountryData>> {
+//   if (normalizedCache) return normalizedCache;
 
-  const raw      = await loadRaw();
-  const allRows  = Array.from(raw.values());
-  const result   = new Map<string, NormalizedCountryData>();
+//   const raw      = await loadRaw();
+//   const allRows  = Array.from(raw.values());
+//   const result   = new Map<string, NormalizedCountryData>();
 
-  for (const [name, data] of raw.entries()) {
-    const norm = {} as NormalizedCountryData;
-    for (const m of METRICS) {
-      const allVals = allRows.map(r => r[m.key]);
-      norm[m.key] = logNormalize(allVals, data[m.key]);
-    }
-    result.set(name, norm);
-  }
+//   for (const [name, data] of raw.entries()) {
+//     const norm = {} as NormalizedCountryData;
+//     for (const m of METRICS) {
+//       const allVals = allRows.map(r => r[m.key]);
+//       norm[m.key] = logNormalize(allVals, data[m.key]);
+//     }
+//     result.set(name, norm);
+//   }
 
-  normalizedCache = result;
-  return result;
-}
+//   normalizedCache = result;
+//   return result;
+// }
