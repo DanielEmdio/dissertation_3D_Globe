@@ -1,7 +1,7 @@
 import { Radar, RadarChart, PolarGrid, Legend, PolarAngleAxis, PolarRadiusAxis, Tooltip } from 'recharts';
 import { EyeClosed, Eye, Radar as RadarIcon } from "lucide-react";
 import { useState, useEffect } from 'react';
-import { getNormalizedData, getRawData, METRICS } from '@/lib/riskData';
+import { getRawData, METRICS } from '@/lib/riskData';
 
 type ChartRow = {
   subject:  string;
@@ -14,9 +14,10 @@ type ChartRow = {
 
 function formatRaw(value: number | null): string {
   if (value === null) return 'N/A';
-  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)}B`;
-  if (value >= 1_000_000)     return `${(value / 1_000_000).toFixed(2)}M`;
-  if (value >= 1_000)         return `${(value / 1_000).toFixed(2)}K`;
+  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}T`;
+  if (value >= 1_000_000_000)     return `${(value / 1_000_000_000).toFixed(2)}B`;
+  if (value >= 1_000_000)         return `${(value / 1_000_000).toFixed(2)}M`;
+  if (value >= 1_000)             return `${(value / 1_000).toFixed(2)}K`;
   return value.toFixed(2);
 }
 
@@ -33,7 +34,7 @@ function CustomTooltip({ active, payload, label }: any) {
           <div key={i} className="flex items-center gap-2">
             <span className="font-medium" style={{ color: entry.color }}>{entry.name}:</span>
             <span className="text-gray-100">{formatRaw(raw)}</span>
-            <span className="text-gray-500">({entry.value}/100)</span>
+            {/* <span className="text-gray-500">({entry.value}/100)</span> */}
           </div>
         );
       })}
@@ -53,24 +54,27 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
   const [c2Missing, setC2Missing] = useState(false);
 
   useEffect(() => {
-    Promise.all([getNormalizedData(), getRawData()]).then(([norm, raw]) => {
-      const c1norm = country1 ? norm.get(country1) : null;
-      const c2norm = country2 ? norm.get(country2) : null;
-      const c1raw  = country1 ? raw.get(country1)  : null;
-      const c2raw  = country2 ? raw.get(country2)  : null;
+    getRawData().then(raw => {
+      const c1raw = country1 ? raw.get(country1) : null;
+      const c2raw = country2 ? raw.get(country2) : null;
 
-      setC1Missing(!!country1 && !c1norm);
-      setC2Missing(!!country2 && !c2norm);
+      setC1Missing(!!country1 && !c1raw);
+      setC2Missing(!!country2 && !c2raw);
 
       setChartData(
-        METRICS.map(m => ({
-          subject:  m.label,
-          A:        c1norm?.[m.key] ?? 0,
-          B:        c2norm?.[m.key] ?? 0,
-          A_raw:    c1raw?.[m.key]  ?? null,
-          B_raw:    c2raw?.[m.key]  ?? null,
-          fullMark: 100,
-        }))
+        METRICS.map(m => {
+          const a = c1raw?.[m.key] ?? null;
+          const b = c2raw?.[m.key] ?? null;
+          const max = Math.max(a ?? 0, b ?? 0);
+          return {
+            subject:  m.label,
+            A:        max > 0 ? Math.round(((a ?? 0) / max) * 100) : 0,
+            B:        max > 0 ? Math.round(((b ?? 0) / max) * 100) : 0,
+            A_raw:    a,
+            B_raw:    b,
+            fullMark: 100,
+          };
+        })
       );
     });
   }, [country1, country2]);
@@ -117,7 +121,7 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
     <RadarChart className='mx-auto' cx="50%" cy="50%" outerRadius="80%" width={500} height={300} data={chartData}>
       <PolarGrid />
       <PolarAngleAxis dataKey="subject" tick={{ fill: '#d1d5db', fontSize: 12 }} />
-      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} />
+      {/* <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} /> */}
       {country1 && !c1Missing && <Radar name={country1} dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />}
       {country2 && !c2Missing && <Radar name={country2} dataKey="B" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />}
       <Tooltip content={<CustomTooltip />} />
