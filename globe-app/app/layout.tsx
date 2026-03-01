@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Global Seismic Risk Visualization",
   description: "Interactive 3D globe visualization of global seismic risk data",
+  icons: {
+    icon: "/icons/icon2.jpg",
+  },
 };
 
 export default function RootLayout({

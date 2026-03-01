@@ -115,6 +115,11 @@ export default function Globe3D({
   useEffect(() => {
     if (isLoading || textureAvailable === null) return;
 
+    // Play loading-complete sound
+    // const loadSound = new Audio('/sounds/snorcon.mp3');
+    // loadSound.volume = 0.8;
+    // loadSound.play().catch(() => {});
+
     const audio = new Audio('/sounds/647591__collectionofmemories__lo-fi-loop.wav');
     audio.loop = true;
     audio.volume = 0.4;
