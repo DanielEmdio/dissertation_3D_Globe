@@ -148,7 +148,7 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
 
   return (
     <Tabs value={activeTab}>
-      <TabsList className="bg-black/40 backdrop-blur-sm border border-white/10">
+      <TabsList className="w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
         <TabsTrigger value="losses" onClick={() => handleTabClick('losses')} className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white">
           <BadgeEuro className="mr-2 h-4 w-4" /> Losses
         </TabsTrigger>
@@ -163,7 +163,7 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
       {cardVisible && (
         <>
           {activeTab === 'losses' && (
-            <Card className="w-[300px] bg-black/40 backdrop-blur-sm border border-white/10">
+            <Card className="w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><BadgeEuro className="mr-2 mb-2" />Losses:</CardTitle>
                 <CardDescription className='text-white/70'>Annual Average Loss (AAL) in monetary terms, capturing the long-term expected replacement and repair costs due to seismic events.</CardDescription>
@@ -175,7 +175,7 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
             </Card>
           )}
           {activeTab === 'fatalities' && (
-            <Card className="w-[300px] bg-black/40 backdrop-blur-sm border border-white/10">
+            <Card className="w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><User className="mr-2 mb-2" />Fatalities:</CardTitle>
                 <CardDescription className='text-white/70'>Values represent the seismic risk to life.</CardDescription>
@@ -187,7 +187,7 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
             </Card>
           )}
           {activeTab === 'buildings' && (
-            <Card className="w-[300px] bg-black/40 backdrop-blur-sm border border-white/10">
+            <Card className="w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><Building2 className="mr-2 mb-2" />Buildings:</CardTitle>
                 <CardDescription className='text-white/70'>Approximate number of buildings in a given area, highlighting structural exposure to seismic shaking and potential damage.</CardDescription>

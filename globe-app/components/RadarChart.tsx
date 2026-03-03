@@ -101,10 +101,11 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
       <button
         type="button"
         onClick={() => setIsMinimized(false)}
-        className="flex items-center justify-center backdrop-blur-sm w-2xs rounded-md text-gray-300 bg-black/40 hover:text-white transition-colors animate-pulse"
+        className="flex items-center justify-center gap-2 backdrop-blur-sm w-full rounded-md text-gray-300 bg-black/40 hover:text-white transition-colors animate-pulse"
         title="Expand chart"
       >
         <RadarIcon className="w-8 h-8" />
+        <p className='font-bold'>Radarchart</p>
       </button>
     );
   }
@@ -116,7 +117,6 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
   const colorA = RADAR_COLORS[(colorCycle - 1 + RADAR_COLORS.length) % RADAR_COLORS.length];
 
   return (
-    <>
     <div>
       <h3 className="relative text-white text-m text-center">
         <span className="inline-flex items-center">
@@ -136,19 +136,19 @@ export default function SpecifiedDomainRadarChart({ country1, country2 }: RadarC
           <EyeClosed className="hidden text-gray-300 group-hover:inline-block" />
         </button>
       </h3>
-    </div>
-
-    <RadarChart className='mx-auto' cx="50%" cy="50%" outerRadius="80%" width={500} height={300} data={chartData}>
-      <PolarGrid />
-      <PolarAngleAxis dataKey="subject" tick={{ fill: '#d1d5db', fontSize: 12 }} />
-      {/* <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} /> */}
-      {country1 && !c1Missing && <Radar name={country1} dataKey="A" stroke={colorA} fill={colorA} fillOpacity={0.6} />}
-      {country2 && !c2Missing && <Radar name={country2} dataKey="B" stroke={colorB} fill={colorB} fillOpacity={0.6} />}
-      <Tooltip content={<CustomTooltip />} />
-      <Legend wrapperStyle={{ color: '#d1d5db' }} />
     
-    </RadarChart>
-    </>
+
+      <RadarChart className='mx-auto' cx="50%" cy="50%" outerRadius="80%" width={450} height={300} data={chartData}>
+        <PolarGrid />
+        <PolarAngleAxis dataKey="subject" tick={{ fill: '#d1d5db', fontSize: 12 }} />
+        {/* <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} /> */}
+        {country1 && !c1Missing && <Radar name={country1} dataKey="A" stroke={colorA} fill={colorA} fillOpacity={0.6} />}
+        {country2 && !c2Missing && <Radar name={country2} dataKey="B" stroke={colorB} fill={colorB} fillOpacity={0.6} />}
+        <Tooltip content={<CustomTooltip />}/>
+        <Legend wrapperStyle={{ color: '#d1d5db' }} />
+      
+      </RadarChart>
+    </div>
   );
 };
 
