@@ -22,6 +22,8 @@ export type RawCountryData    = Record<MetricKey, number | null>;
 let rawCache:    Map<string, RawCountryData> | null = null;
 // region keyed by canonical GEM name (CSV REGION column)
 let regionCache: Map<string, string>         | null = null;
+// resolved profile URL (or null) per canonical name, so we never probe twice
+const profileUrlCache = new Map<string, string | null>();
 
 export async function getRawData(): Promise<Map<string, RawCountryData>> {
   return loadRaw();
@@ -33,13 +35,52 @@ export async function getCountryRegion(name: string): Promise<string | null> {
   return regionCache!.get(toCanonicalCountryName(name)) ?? null;
 }
 
+/** The distinct GEM regions present in the dataset (the repo's top-level folders). */
+async function getAllRegions(): Promise<string[]> {
+  await loadRaw();
+  return [...new Set(regionCache!.values())];
+}
+
+/** Whether a remote URL exists, via a lightweight HEAD request. */
+async function urlExists(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: 'HEAD' });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Raw GitHub URL of a country's seismic risk profile image, or null if the
- * country has no entry in the dataset (so no region to build the path from).
+ * Raw GitHub URL of a country's seismic risk profile image.
+ *
+ * Countries present in the dataset use their known region directly. Countries
+ * absent from the dataset (e.g. Chad) still get a chance: we probe every known
+ * GEM region for a matching profile in the repo and return the first that
+ * exists. Returns null only if no profile is found anywhere.
  */
 export async function getSeismicRiskProfileUrl(name: string): Promise<string | null> {
-  const region = await getCountryRegion(name);
-  return region ? buildSeismicRiskProfileUrl(region, name) : null;
+  const canonical = toCanonicalCountryName(name);
+  if (profileUrlCache.has(canonical)) return profileUrlCache.get(canonical)!;
+
+  const knownRegion = await getCountryRegion(name);
+  let resolved: string | null = null;
+
+  if (knownRegion) {
+    resolved = buildSeismicRiskProfileUrl(knownRegion, canonical);
+  } else {
+    // Not in the dataset: search the repo across all known regions.
+    for (const region of await getAllRegions()) {
+      const url = buildSeismicRiskProfileUrl(region, canonical);
+      if (await urlExists(url)) {
+        resolved = url;
+        break;
+      }
+    }
+  }
+
+  profileUrlCache.set(canonical, resolved);
+  return resolved;
 }
 
 async function loadRaw(): Promise<Map<string, RawCountryData>> {
