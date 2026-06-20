@@ -16,9 +16,9 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-import { BadgeEuro, User, Building2 } from "lucide-react"
+import { BadgeEuro, User, Building2, Leaf } from "lucide-react"
 
-type Metric = 'losses' | 'fatalities' | 'buildings';
+type Metric = 'losses' | 'fatalities' | 'buildings' | 'carbon';
 
 interface ColorStop {
   color: string;
@@ -76,6 +76,24 @@ const COLOR_SCALES: Record<Metric, { stops: ColorStop[]; minLabel: string; maxLa
     ],
     minLabel: 'Few',
     maxLabel: 'Many',
+  },
+
+  carbon: {
+    stops: [
+      { color: 'rgb(240,248,255)', label: '' },
+      { color: 'rgb(180,220,224)', label: 'Very low' },
+      { color: 'rgb(119,192,193)', label: '' },
+      { color: 'rgb(119,178,167)', label: '' },
+      { color: 'rgb(180,177,144)', label: 'Low' },
+      { color: 'rgb(240,176,122)', label: '' },
+      { color: 'rgb(197,130,122)', label: '' },
+      { color: 'rgb(154,83,121)',  label: 'Moderate' },
+      { color: 'rgb(136,56,124)',  label: '' },
+      { color: 'rgb(116,34,101)',  label: '' },
+      { color: 'rgb(90,20,88)',    label: 'High' },
+    ],
+    minLabel: 'Very low',  
+    maxLabel: 'High',  
   },
 };
 
@@ -148,7 +166,7 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
 
   return (
     <Tabs value={activeTab}>
-      <TabsList className="w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
+      <TabsList className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
         <TabsTrigger value="losses" onClick={() => handleTabClick('losses')} className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white">
           <BadgeEuro className="mr-2 h-4 w-4" /> Losses
         </TabsTrigger>
@@ -158,12 +176,15 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
         <TabsTrigger value="buildings" onClick={() => handleTabClick('buildings')} className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white">
           <Building2 className="mr-2 h-4 w-4" /> Buildings
         </TabsTrigger>
+        <TabsTrigger value="carbon" onClick={() => handleTabClick('carbon')} className="text-white/70 data-[state=active]:bg-white/15 data-[state=active]:text-white">
+          <Leaf className="mr-2 h-4 w-4" /> Embodied Carbon
+        </TabsTrigger>
       </TabsList>
 
       {cardVisible && (
-        <>
+        <div className="w-[450px] fixed top-4 left-4 z-50">
           {activeTab === 'losses' && (
-            <Card className="w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
+            <Card className="bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><BadgeEuro className="mr-2 mb-2" />Losses:</CardTitle>
                 <CardDescription className='text-white/70'>Annual Average Loss (AAL) in monetary terms, capturing the long-term expected replacement and repair costs due to seismic events.</CardDescription>
@@ -175,7 +196,7 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
             </Card>
           )}
           {activeTab === 'fatalities' && (
-            <Card className="w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
+            <Card className=" bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><User className="mr-2 mb-2" />Fatalities:</CardTitle>
                 <CardDescription className='text-white/70'>Values represent the seismic risk to life.</CardDescription>
@@ -187,7 +208,7 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
             </Card>
           )}
           {activeTab === 'buildings' && (
-            <Card className="w-[500px] bg-black/40 backdrop-blur-sm border border-white/10">
+            <Card className=" bg-black/40 backdrop-blur-sm border border-white/10">
               <CardHeader>
                 <CardTitle className='text-white'><Building2 className="mr-2 mb-2" />Buildings:</CardTitle>
                 <CardDescription className='text-white/70'>Approximate number of buildings in a given area, highlighting structural exposure to seismic shaking and potential damage.</CardDescription>
@@ -198,7 +219,18 @@ export default function MetricTabs({ onMetricChange }: MetricTabsProps) {
               </CardContent>
             </Card>
           )}
-        </>
+          {activeTab === 'carbon' && (
+            <Card className=" bg-black/40 backdrop-blur-sm border border-white/10">
+              <CardHeader>
+                <CardTitle className='text-white'><Leaf className="mr-2 mb-2" />Embodied Carbon:</CardTitle>
+                <CardDescription className='text-white/70'>Annual Average Loss of embodied carbon, capturing the greenhouse-gas emissions associated with replacing and repairing buildings damaged by seismic events.</CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-white/50">
+                <ColorScaleLegend metric="carbon" />
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
     </Tabs>
   );

@@ -1,71 +1,64 @@
 /**
- * Country profile mapping utilities
- * Maps country names to their profile image paths
+ * Country naming hub.
+ *
+ * Single source of truth for translating the globe's GeoJSON country names
+ * (feature.properties.NAME, Natural Earth 1:110m) into the canonical name used
+ * by the GEM datasets — both the risk CSV (lib/riskData.ts) and the
+ * gem/risk-profiles GitHub repo. Everything downstream (radar lookups, profile
+ * image URLs) derives from this canonical name, so the two can never drift.
+ *
+ * The canonical name is the GEM dataset spelling (clean ASCII, e.g.
+ * "Ivory Coast", "United States"), which makes it safe to turn into URL/path
+ * segments by replacing spaces with underscores.
  */
 
 /**
- * Normalize country name to match profile image filename format
- * Converts spaces to underscores and handles special cases
- * @param countryName - The country name (e.g., "United States")
- * @returns Normalized name (e.g., "United_States")
+ * GeoJSON NAME -> canonical GEM dataset name.
+ * Only the names that differ need an entry; everything else passes through.
  */
-export function normalizeCountryName(countryName: string): string {
-  // Replace spaces with underscores
-  let normalized = countryName.replace(/\s+/g, '_');
-
-  // Handle special cases
-  const specialCases: Record<string, string> = {
-    'United_States_of_America': 'United_States',
-    'USA': 'United_States',
-    'UK': 'United_Kingdom',
-    'UAE': 'United_Arab_Emirates',
-    'Democratic_Republic_of_Congo': 'Democratic_Republic_of_the_Congo',
-    'Republic_of_the_Congo': 'Congo',
-    'Côte_d\'Ivoire': 'Ivory_Coast',
-    'Czechia': 'Czechia',
-    'Czech_Republic': 'Czechia',
-  };
-
-  return specialCases[normalized] || normalized;
-}
-
-/**
- * Get the profile image path for a country
- * @param countryName - The country name
- * @returns Path to the profile image in the public folder
- */
-export function getCountryProfilePath(countryName: string): string {
-  const normalized = normalizeCountryName(countryName);
-  return `/country-profiles/country_profile_${normalized}.png`;
-}
-
-/**
- * Regional grouping of countries (matching the folder structure)
- */
-export const regions = {
-  Africa: [
-    'Algeria', 'Angola', 'Benin', 'Botswana', 'Burundi', 'Cameroon',
-    'Central_African_Republic', 'Chad', 'Comoros', 'Congo',
-    'Democratic_Republic_of_the_Congo', 'Djibouti', 'Egypt',
-    'Equatorial_Guinea', 'Eritrea', 'Eswatini', 'Ethiopia', 'Gabon',
-    'Gambia', 'Ghana', 'Guinea', 'Guinea_Bissau', 'Ivory_Coast',
-    'Kenya', 'Lesotho', 'Liberia', 'Libya', 'Madagascar', 'Malawi',
-    'Mali', 'Mauritania', 'Mauritius', 'Morocco', 'Mozambique',
-    'Namibia', 'Niger', 'Nigeria', 'Rwanda', 'Senegal',
-    'Sierra_Leone', 'Somalia', 'South_Africa', 'South_Sudan',
-    'Sudan', 'Tanzania', 'Togo', 'Tunisia', 'Uganda', 'Zambia', 'Zimbabwe'
-  ],
-  // Add other regions as needed
+export const COUNTRY_NAME_ALIASES: Record<string, string> = {
+  'Bosnia and Herz.':         'Bosnia and Herzegovina',
+  'Central African Rep.':     'Central African Republic',
+  "Côte d'Ivoire":            'Ivory Coast',
+  'Dem. Rep. Congo':          'Democratic Republic of the Congo',
+  'Dominican Rep.':           'Dominican Republic',
+  'Eq. Guinea':               'Equatorial Guinea',
+  'Guinea-Bissau':            'Guinea Bissau',
+  'S. Sudan':                 'South Sudan',
+  'Solomon Is.':              'Solomon Islands',
+  'Timor-Leste':              'Timor Leste',
+  'United States of America': 'United States',
+  'eSwatini':                 'Eswatini',
 };
 
 /**
- * Check if a country profile exists (basic validation)
- * @param countryName - The country name
- * @returns Boolean indicating if profile likely exists
+ * Resolve a globe/GeoJSON country name to its canonical GEM dataset name.
+ * Names without an alias are returned unchanged.
  */
-export function hasCountryProfile(countryName: string): boolean {
-  // In a real app, you might want to fetch this list dynamically
-  // For now, we'll assume profiles exist for normalized names
-  const normalized = normalizeCountryName(countryName);
-  return normalized.length > 0;
+export function toCanonicalCountryName(geoName: string): string {
+  return COUNTRY_NAME_ALIASES[geoName] ?? geoName;
+}
+
+/**
+ * Convert a name into a URL/path segment used by the GEM repos
+ * (e.g. "United States" -> "United_States", "North America" -> "North_America").
+ */
+export function toPathSegment(name: string): string {
+  return name.trim().replace(/\s+/g, '_');
+}
+
+const RISK_PROFILES_BASE =
+  'https://raw.githubusercontent.com/gem/risk-profiles/refs/heads/master';
+
+/**
+ * Build the raw GitHub URL for a country's seismic risk profile image.
+ *
+ * Pattern: {base}/{Region}/{Country}/seismic_risk_profile_{Country}.png
+ * `region` is the GEM region (CSV REGION column); `country` may be either a
+ * GeoJSON name or an already-canonical name — it is normalized either way.
+ */
+export function buildSeismicRiskProfileUrl(region: string, country: string): string {
+  const regionSeg  = toPathSegment(region);
+  const countrySeg = toPathSegment(toCanonicalCountryName(country));
+  return `${RISK_PROFILES_BASE}/${regionSeg}/${countrySeg}/seismic_risk_profile_${countrySeg}.png`;
 }

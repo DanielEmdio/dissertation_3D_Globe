@@ -1,3 +1,9 @@
+import {
+  COUNTRY_NAME_ALIASES,
+  toCanonicalCountryName,
+  buildSeismicRiskProfileUrl,
+} from '@/utils/countryMapping';
+
 export const METRICS = [
   { key: 'EXP_BUILDINGS',       label: 'Total number of buildings'  },
   { key: 'EXP_COST_TOTAL',      label: 'Total replacement cost' },
@@ -6,28 +12,47 @@ export const METRICS = [
   { key: 'AAL_FATALITIES',      label: 'AAL Fatalities'  },
   { key: 'AAL_BUILDINGS',       label: 'AAL Buildings'   },
   { key: 'AAL_PEOPLE_DISPLACED',label: 'AAL Displaced'   },
+  { key: 'AAL_EMBODIED_CARBON', label: 'AAL Embodied Carbon' },
 ] as const;
 
 export type MetricKey = typeof METRICS[number]['key'];
 export type RawCountryData    = Record<MetricKey, number | null>;
 // export type NormalizedCountryData = Record<MetricKey, number>; // 0–100
 
-let rawCache:        Map<string, RawCountryData>        | null = null;
-// let normalizedCache: Map<string, NormalizedCountryData> | null = null;
+let rawCache:    Map<string, RawCountryData> | null = null;
+// region keyed by canonical GEM name (CSV REGION column)
+let regionCache: Map<string, string>         | null = null;
 
 export async function getRawData(): Promise<Map<string, RawCountryData>> {
   return loadRaw();
 }
 
+/** GEM region for a country, looked up by GeoJSON or canonical name. */
+export async function getCountryRegion(name: string): Promise<string | null> {
+  await loadRaw();
+  return regionCache!.get(toCanonicalCountryName(name)) ?? null;
+}
+
+/**
+ * Raw GitHub URL of a country's seismic risk profile image, or null if the
+ * country has no entry in the dataset (so no region to build the path from).
+ */
+export async function getSeismicRiskProfileUrl(name: string): Promise<string | null> {
+  const region = await getCountryRegion(name);
+  return region ? buildSeismicRiskProfileUrl(region, name) : null;
+}
+
 async function loadRaw(): Promise<Map<string, RawCountryData>> {
   if (rawCache) return rawCache;
 
-  const res  = await fetch('/data/Global_Risk_Summary_Adm0.csv');
+  const res  = await fetch('/data/grm_radar_adm0.csv');
   const text = await res.text();
-  const lines   = text.trim().split('\n');
-  const headers = lines[0].split(',');
+  const lines   = text.trim().split(/\r?\n/);
+  const headers = lines[0].split(',').map(h => h.trim());
+  const regionIdx = headers.indexOf('REGION');
 
-  const map = new Map<string, RawCountryData>();
+  const map     = new Map<string, RawCountryData>();
+  const regions = new Map<string, string>();
 
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(',');
@@ -41,43 +66,21 @@ async function loadRaw(): Promise<Map<string, RawCountryData>> {
       entry[m.key] = raw ? parseFloat(raw) : null;
     }
     map.set(name, entry);
+
+    const region = cols[regionIdx]?.trim();
+    if (region) regions.set(name, region);
   }
+
+  // Register GeoJSON-name aliases so the globe's country names resolve.
+  for (const [geoName, dataName] of Object.entries(COUNTRY_NAME_ALIASES)) {
+    const entry = map.get(dataName);
+    if (entry) map.set(geoName, entry);
+  }
+
+  regionCache = regions;
 
   rawCache = map;
   return map;
 }
 
-// function logNormalize(allValues: (number | null)[], value: number | null): number {
-//   if (value === null || value <= 0) return 0;
 
-//   const valid = allValues.filter((v): v is number => v !== null && v > 0);
-//   if (valid.length === 0) return 0;
-
-//   const logs  = valid.map(v => Math.log10(v));
-//   const min   = Math.min(...logs);
-//   const max   = Math.max(...logs);
-//   const logV  = Math.log10(value);
-
-//   if (max === min) return 50;
-//   return Math.round(((logV - min) / (max - min)) * 100);
-// }
-
-// export async function getNormalizedData(): Promise<Map<string, NormalizedCountryData>> {
-//   if (normalizedCache) return normalizedCache;
-
-//   const raw      = await loadRaw();
-//   const allRows  = Array.from(raw.values());
-//   const result   = new Map<string, NormalizedCountryData>();
-
-//   for (const [name, data] of raw.entries()) {
-//     const norm = {} as NormalizedCountryData;
-//     for (const m of METRICS) {
-//       const allVals = allRows.map(r => r[m.key]);
-//       norm[m.key] = logNormalize(allVals, data[m.key]);
-//     }
-//     result.set(name, norm);
-//   }
-
-//   normalizedCache = result;
-//   return result;
-// }

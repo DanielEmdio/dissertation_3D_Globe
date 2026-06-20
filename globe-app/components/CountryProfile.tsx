@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getCountryProfilePath } from '@/utils/countryMapping';
+import { getSeismicRiskProfileUrl } from '@/lib/riskData';
 import { OctagonAlert } from "lucide-react"
 import { LoaderOne } from "@/components/ui/loader";
 
@@ -15,10 +15,28 @@ export default function CountryProfile({ countryName, onClose }: CountryProfileP
   // Track which country had an error (not just boolean)
   const [errorCountry, setErrorCountry] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileUrl, setProfileUrl] = useState<string | null>(null);
 
-  // Reset loading state whenever the selected country changes
+  // Resolve the (async) GitHub profile URL whenever the selected country changes
   useEffect(() => {
+    if (!countryName) return;
+    let cancelled = false;
     setIsLoading(true);
+    setProfileUrl(null);
+    setErrorCountry(null);
+
+    getSeismicRiskProfileUrl(countryName).then(url => {
+      if (cancelled) return;
+      if (url) {
+        setProfileUrl(url);
+      } else {
+        // No dataset entry => no region to build a URL from: treat as missing.
+        setErrorCountry(countryName);
+        setIsLoading(false);
+      }
+    });
+
+    return () => { cancelled = true; };
   }, [countryName]);
 
   // Only show error if it's for the current country
@@ -35,8 +53,6 @@ export default function CountryProfile({ countryName, onClose }: CountryProfileP
       </div>
     );
   }
-
-  const profilePath = getCountryProfilePath(countryName);
 
   return (
     <div className="flex flex-col bg-white overflow-hidden h-full">
@@ -82,7 +98,7 @@ export default function CountryProfile({ countryName, onClose }: CountryProfileP
                 No profile found for <b>{countryName}</b>
               </p>
               {/* <p className="text-xs mt-2 text-gray-400">
-                Expected path: {profilePath}
+                Expected URL: {profileUrl}
               </p> */}
             </div>
           </div>
@@ -95,14 +111,16 @@ export default function CountryProfile({ countryName, onClose }: CountryProfileP
                 </div>
               </div>
             )}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={profilePath}
-              alt={`${countryName} Seismic Risk Profile`}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoading ? 'none' : 'block' }}
-              onLoad={() => setIsLoading(false)}
-              onError={() => { setErrorCountry(countryName); setIsLoading(false); }}
-            />
+            {profileUrl && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={profileUrl}
+                alt={`${countryName} Seismic Risk Profile`}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoading ? 'none' : 'block' }}
+                onLoad={() => setIsLoading(false)}
+                onError={() => { setErrorCountry(countryName); setIsLoading(false); }}
+              />
+            )}
           </div>
         )}
       </div>

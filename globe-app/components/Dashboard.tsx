@@ -8,7 +8,7 @@ import RadarChart from './RadarChart';
 import { DraggableCardBody, DraggableCardContainer } from './ui/draggable-card';
 import { Magnet } from "lucide-react"
 
-type Metric = 'losses' | 'fatalities' | 'buildings';
+type Metric = 'losses' | 'fatalities' | 'buildings' | 'carbon';
 
 export default function Dashboard() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
@@ -92,9 +92,7 @@ export default function Dashboard() {
         </>
       )}
 
-      <div className='absolute top-4 left-4 z-50'>
-        <MetricTabs onMetricChange={setSelectedMetric} />
-      </div>
+      <MetricTabs onMetricChange={setSelectedMetric} />
 
       {(compareCountries[0] || compareCountries[1]) && (
         <div className='w-[500px] absolute bottom-4 left-4 z-50 bg-black/40 backdrop-blur-sm border border-white/10 p-4 rounded-lg'>

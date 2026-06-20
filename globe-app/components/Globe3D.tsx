@@ -17,7 +17,7 @@ interface CountryFeature {
   geometry: unknown;
 }
 
-type Metric = 'losses' | 'fatalities' | 'buildings';
+type Metric = 'losses' | 'fatalities' | 'buildings' | 'carbon';
 
 interface Globe3DProps {
   onCountryClick?: (countryName: string) => void;
